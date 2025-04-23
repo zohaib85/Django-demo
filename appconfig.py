@@ -1,52 +1,60 @@
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.managementgroups import ManagementGroupsAPI
-from azure.mgmt.subscription import SubscriptionClient
 from azure.appconfiguration import AzureAppConfigurationClient, ConfigurationSetting
 import os
 
-# ENV Variables
-mg_name = os.environ.get("AZURE_MANAGEMENT_GROUP")  # e.g. 'my-management-group'
+# Get environment variables
+management_group_name = os.environ.get("AZURE_MANAGEMENT_GROUP")  # e.g. 'my-mg-name'
 app_config_endpoint = os.environ.get("AZURE_APPCONFIG_ENDPOINT")  # e.g. 'https://myconfig.azconfig.io'
 
-# Auth
+# Authenticate using managed identity or service principal
 credential = DefaultAzureCredential()
-mg_client = ManagementGroupsAPI(credential)
-sub_client = SubscriptionClient(credential)
+
+# Initialize App Configuration client
 app_config_client = AzureAppConfigurationClient(app_config_endpoint, credential)
 
-def get_subscriptions_from_mg(mg_name):
-    """Get all subscriptions in a management group."""
-    mg_response = mg_client.management_group_subscriptions.list(mg_name)
-    return [sub.name for sub in mg_response]
+# Initialize Management Groups client
+mg_client = ManagementGroupsAPI(credential)
 
-def store_tags(subscription_id):
-    """Fetch resources and store tags for a given subscription."""
-    print(f"\nProcessing subscription: {subscription_id}")
+def get_subscription_ids(mg_name):
+    """Fetch all subscription IDs under a management group."""
+    print(f"Fetching subscriptions in management group: {mg_name}")
+    subs = []
+    descendants = mg_client.management_group_descendants.list(group_id=mg_name)
+    for item in descendants:
+        if item.type.lower() == "microsoft.resources/subscriptions":
+            subs.append(item.name)
+    return subs
+
+def push_tags_to_app_config(subscription_id):
+    """Push resource tags from a subscription to App Configuration."""
+    print(f"Processing subscription: {subscription_id}")
     resource_client = ResourceManagementClient(credential, subscription_id)
     resources = resource_client.resources.list()
 
-    for res in resources:
-        resource_id = res.id.replace('/', '_')[1:]
-        tags = res.tags or {}
-        for k, v in tags.items():
-            key = f"{resource_id}:tag:{k}"
-            value = v or "null"
+    for resource in resources:
+        resource_id_clean = resource.id.replace('/', '_')[1:]
+        tags = resource.tags or {}
+
+        for tag_key, tag_value in tags.items():
+            config_key = f"{resource_id_clean}:tag:{tag_key}"
+            config_value = tag_value or "null"
             try:
                 app_config_client.set_configuration_setting(ConfigurationSetting(
-                    key=key,
-                    value=value,
+                    key=config_key,
+                    value=config_value,
                     content_type="text/plain",
                     tags={"subscriptionId": subscription_id}
                 ))
-                print(f"Stored: {key} -> {value}")
+                print(f"Stored: {config_key} -> {config_value}")
             except Exception as e:
-                print(f"Failed to store {key}: {str(e)}")
+                print(f"Error storing {config_key}: {e}")
 
 def main():
-    subscriptions = get_subscriptions_from_mg(mg_name)
-    for sub_id in subscriptions:
-        store_tags(sub_id)
+    subscription_ids = get_subscription_ids(management_group_name)
+    for sub_id in subscription_ids:
+        push_tags_to_app_config(sub_id)
 
 if __name__ == "__main__":
     main()
