@@ -3,15 +3,12 @@ import sys
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
 
-# Initialize resource client
 def get_resource_client():
-    print("Authenticating with managed identity...")
     credential = DefaultAzureCredential()
-    subscription_id = "<your-subscription-id>"  # Replace with your actual subscription ID
-    print(f"Subscription ID: {subscription_id}")
+    subscription_id = "<your-subscription-id>"  # Replace this
+    print(f"Using subscription: {subscription_id}")
     return ResourceManagementClient(credential, subscription_id)
 
-# Simulated call to ServiceNow
 def get_servicenow_metadata(ci_value):
     print(f"Retrieving metadata from ServiceNow for CI: {ci_value}")
     return {
@@ -24,35 +21,43 @@ def get_servicenow_metadata(ci_value):
         "syf:environment": "prod"
     }
 
-# Apply tags
 def update_tags(resource_client, resource_id, new_tags):
     try:
-        print(f"Getting resource: {resource_id}")
         resource = resource_client.resources.get_by_id(resource_id, api_version="2021-04-01")
         existing_tags = resource.tags or {}
-        print(f"Existing tags: {existing_tags}")
-
         merged_tags = {**existing_tags, **new_tags}
-        print(f"Final tags to apply: {merged_tags}")
-
+        print(f"Updating tags: {merged_tags}")
         resource_client.resources.update_by_id(
             resource_id=resource_id,
             api_version="2021-04-01",
             parameters={"tags": merged_tags}
         )
-        print("Tags successfully updated.")
+        print("Tags updated successfully.")
     except Exception as e:
         print(f"Error updating tags: {str(e)}")
 
-# Main execution
 try:
-    print("Runbook triggered via webhook.")
+    print("Runbook started. Reading input...")
     input_json = sys.stdin.read()
-    print(f"Received input: {input_json}")
 
-    events = json.loads(input_json)
-    if not isinstance(events, list):
-        events = [events]
+    if not input_json.strip():
+        print("No input received. Exiting.")
+        sys.exit(0)
+
+    print(f"Raw input: {input_json}")
+
+    # Decode top-level webhook structure
+    wrapper = json.loads(input_json)
+    request_body_str = wrapper.get("RequestBody", "")
+    print(f"RequestBody (string): {request_body_str}")
+
+    if not request_body_str:
+        print("Empty RequestBody in webhook payload.")
+        sys.exit(1)
+
+    # Decode the actual Event Grid payload (it's a stringified JSON list)
+    events = json.loads(request_body_str)
+    print(f"Parsed Event Grid events: {events}")
 
     resource_client = get_resource_client()
 
@@ -60,7 +65,7 @@ try:
         print("Processing event...")
         resource_id = event.get("data", {}).get("resourceUri")
         if not resource_id:
-            print("No resourceUri found in event.")
+            print("No resourceUri found.")
             continue
 
         print(f"Resource ID: {resource_id}")
@@ -75,16 +80,16 @@ try:
                 break
 
         if not ci_value:
-            print("CI tag not found. Skipping this resource.")
+            print("CI tag not found. Skipping resource.")
             continue
 
-        print(f"CI value found: {ci_value}")
+        print(f"Found CI: {ci_value}")
         new_tags = get_servicenow_metadata(ci_value)
         new_tags["syf:application:ci"] = ci_value
 
         update_tags(resource_client, resource_id, new_tags)
 
-    print("Runbook execution completed.")
+    print("Runbook completed.")
 
-except Exception as ex:
-    print(f"Unexpected error: {str(ex)}")
+except Exception as e:
+    print(f"Unexpected error: {str(e)}")
