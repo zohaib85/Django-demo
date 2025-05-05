@@ -1,20 +1,16 @@
 import json
-import requests
 import logging
-import azure.identity
+import requests
+from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
 
-def get_azure_credentials():
-    return azure.identity.DefaultAzureCredential()
-
 def get_resource_client():
-    credentials = get_azure_credentials()
-    subscription_id = "<your-subscription-id>"
-    return ResourceManagementClient(credentials, subscription_id)
+    credential = DefaultAzureCredential()
+    subscription_id = "<your-subscription-id>"  # Optionally extract from subject
+    return ResourceManagementClient(credential, subscription_id)
 
-def get_servicenow_tags(ci_value):
-    # Replace this with real ServiceNow API call
-    # For demonstration, return mock tags
+def get_servicenow_metadata(ci_value):
+    # Replace with real ServiceNow API call
     return {
         "syf:application": "example-app",
         "syf:application:short_name": "exapp",
@@ -25,7 +21,7 @@ def get_servicenow_tags(ci_value):
         "syf:environment": "prod"
     }
 
-def update_resource_tags(resource_client, resource_id, new_tags):
+def update_tags(resource_client, resource_id, new_tags):
     resource = resource_client.resources.get_by_id(resource_id, api_version="2021-04-01")
     existing_tags = resource.tags or {}
     existing_tags.update(new_tags)
@@ -36,39 +32,38 @@ def update_resource_tags(resource_client, resource_id, new_tags):
         parameters={"tags": existing_tags}
     )
 
-def main(event: dict):
+def process_event(event):
+    resource_id = event.get("data", {}).get("resourceUri")
+    if not resource_id:
+        logging.warning("No resourceUri found in event.")
+        return
+
+    logging.info(f"Processing resource: {resource_id}")
+    resource_client = get_resource_client()
+
     try:
-        event_data = event["data"]
-        resource_id = event_data.get("resourceId")
-
-        if not resource_id:
-            logging.warning("Resource ID not found in event.")
-            return
-
-        resource_client = get_resource_client()
-
-        # Fetch the resource to read existing tags
         resource = resource_client.resources.get_by_id(resource_id, api_version="2021-04-01")
         tags = resource.tags or {}
 
         ci_value = tags.get("syf:application:ci")
         if not ci_value:
-            logging.info(f"Resource {resource_id} does not have 'syf:application:ci' tag.")
+            logging.info(f"Resource {resource_id} missing 'syf:application:ci' tag.")
             return
 
-        # Get metadata from ServiceNow
-        new_tags = get_servicenow_tags(ci_value)
-        new_tags["syf:application:ci"] = ci_value  # Preserve original CI tag
+        additional_tags = get_servicenow_metadata(ci_value)
+        additional_tags["syf:application:ci"] = ci_value  # Ensure CI stays
 
-        # Update resource with new tags
-        update_resource_tags(resource_client, resource_id, new_tags)
-        logging.info(f"Successfully updated tags for {resource_id}.")
+        update_tags(resource_client, resource_id, additional_tags)
+        logging.info(f"Tags updated for resource {resource_id}.")
 
     except Exception as e:
-        logging.error(f"Error processing event: {str(e)}")
+        logging.error(f"Failed to process resource {resource_id}: {str(e)}")
 
-# Entry point for Azure Automation Runbook
+# Main entry point for Azure Automation webhook
 def runbook_main(req):
-    body = req.get_body().decode('utf-8')
-    event = json.loads(body)
-    main(event)
+    try:
+        events = json.loads(req.get_body().decode())
+        for event in events:
+            process_event(event)
+    except Exception as e:
+        logging.error(f"Runbook error: {str(e)}")
