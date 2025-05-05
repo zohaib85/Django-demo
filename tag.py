@@ -1,19 +1,18 @@
 import json
-import logging
 import requests
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
 
 def get_resource_client():
-    print("Authenticating with DefaultAzureCredential...")
+    print("Authenticating with Azure using managed identity...")
     credential = DefaultAzureCredential()
-    subscription_id = "<your-subscription-id>"  # Update this
+    subscription_id = "<your-subscription-id>"  # Replace with your actual subscription ID
     print(f"Using subscription: {subscription_id}")
     return ResourceManagementClient(credential, subscription_id)
 
 def get_servicenow_metadata(ci_value):
-    print(f"Fetching metadata from ServiceNow for CI: {ci_value}")
-    # Replace this with actual ServiceNow API call
+    print(f"Fetching metadata from ServiceNow for CI value: {ci_value}")
+    # Simulated metadata from ServiceNow
     return {
         "syf:application": "example-app",
         "syf:application:short_name": "exapp",
@@ -25,54 +24,64 @@ def get_servicenow_metadata(ci_value):
     }
 
 def update_tags(resource_client, resource_id, new_tags):
-    print(f"Updating tags for resource: {resource_id}")
-    resource = resource_client.resources.get_by_id(resource_id, api_version="2021-04-01")
-    existing_tags = resource.tags or {}
-    print(f"Existing tags: {existing_tags}")
-    existing_tags.update(new_tags)
-    print(f"New tags to apply: {existing_tags}")
+    print(f"Preparing to update tags for: {resource_id}")
+    try:
+        resource = resource_client.resources.get_by_id(resource_id, api_version="2021-04-01")
+        existing_tags = resource.tags or {}
+        print(f"Existing tags on resource: {existing_tags}")
 
-    result = resource_client.resources.update_by_id(
-        resource_id=resource_id,
-        api_version="2021-04-01",
-        parameters={"tags": existing_tags}
-    )
-    print(f"Update result: {result.id if result else 'No result returned'}")
+        combined_tags = {**existing_tags, **new_tags}
+        print(f"Applying combined tags: {combined_tags}")
+
+        resource_client.resources.update_by_id(
+            resource_id=resource_id,
+            api_version="2021-04-01",
+            parameters={"tags": combined_tags}
+        )
+        print(f"Tags successfully updated for {resource_id}")
+    except Exception as e:
+        print(f"Failed to update tags: {str(e)}")
 
 def process_event(event):
-    print("Processing single event...")
+    print("Processing incoming Event Grid event...")
     resource_id = event.get("data", {}).get("resourceUri")
     if not resource_id:
-        print("No resourceUri found in event.")
+        print("No resourceUri in event data.")
         return
 
-    print(f"Resource URI: {resource_id}")
+    print(f"Resource ID from event: {resource_id}")
     resource_client = get_resource_client()
 
     try:
-        print(f"Fetching resource details for: {resource_id}")
+        print("Fetching current resource state...")
         resource = resource_client.resources.get_by_id(resource_id, api_version="2021-04-01")
         tags = resource.tags or {}
-        print(f"Current tags: {tags}")
+        print(f"Tags found on resource: {tags}")
 
-        ci_value = tags.get("syf:application:ci")
+        # Normalize keys (Azure stores tag keys case-insensitively)
+        ci_value = None
+        for key in tags:
+            if key.lower() == "syf:application:ci":
+                ci_value = tags[key]
+                break
+
         if not ci_value:
-            print(f"'syf:application:ci' tag not found on resource {resource_id}.")
+            print(f"'syf:application:ci' tag not found on {resource_id}")
             return
 
+        print(f"CI tag value: {ci_value}")
+
         additional_tags = get_servicenow_metadata(ci_value)
-        additional_tags["syf:application:ci"] = ci_value  # Ensure CI tag remains
+        additional_tags["syf:application:ci"] = ci_value
 
         update_tags(resource_client, resource_id, additional_tags)
-        print(f"Tags successfully updated for resource {resource_id}.")
 
     except Exception as e:
-        print(f"Error processing resource {resource_id}: {str(e)}")
+        print(f"Exception while processing resource: {str(e)}")
 
-# Main entry point for Azure Automation webhook
 def runbook_main(req):
     try:
-        print("Webhook triggered. Reading request body...")
+        print("Webhook triggered. Reading body...")
         body = req.get_body().decode()
         print(f"Received body: {body}")
         events = json.loads(body)
@@ -81,7 +90,8 @@ def runbook_main(req):
 
         for event in events:
             process_event(event)
-        print("Processing complete.")
+
+        print("Runbook processing complete.")
 
     except Exception as e:
         print(f"Runbook execution error: {str(e)}")
