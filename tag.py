@@ -5,11 +5,12 @@ from azure.mgmt.resource import ResourceManagementClient
 
 def get_resource_client():
     credential = DefaultAzureCredential()
-    subscription_id = "<your-subscription-id>"  # Replace with real ID
-    return ResourceManagementClient(credential, subscription_id)
+    # Extract subscription ID from resource URI dynamically later
+    return ResourceManagementClient(credential, "<REPLACE-WITH-YOUR-SUBSCRIPTION-ID>")
 
 def get_servicenow_metadata(ci_value):
-    print(f"Calling ServiceNow for CI: {ci_value}")
+    print(f"Calling ServiceNow API for CI: {ci_value}")
+    # Dummy example; replace with actual ServiceNow call
     return {
         "syf:application": "example-app",
         "syf:application:short_name": "exapp",
@@ -22,79 +23,70 @@ def get_servicenow_metadata(ci_value):
 
 def update_tags(resource_client, resource_id, new_tags):
     try:
+        print(f"Fetching resource: {resource_id}")
         resource = resource_client.resources.get_by_id(resource_id, api_version="2021-04-01")
         existing_tags = resource.tags or {}
+        print(f"Existing tags: {existing_tags}")
+
         merged_tags = {**existing_tags, **new_tags}
-        print(f"Updating tags on {resource_id} with: {merged_tags}")
+        print(f"Merged tags: {merged_tags}")
+
+        print("Updating tags...")
         resource_client.resources.update_by_id(
             resource_id=resource_id,
             api_version="2021-04-01",
             parameters={"tags": merged_tags}
         )
-        print("Tag update successful.")
+        print("Tags updated successfully.")
     except Exception as e:
-        print(f"Error updating tags: {str(e)}")
+        print(f"Error while tagging resource: {str(e)}")
 
-# Main runbook logic
+# --- MAIN ---
 try:
     if len(sys.argv) < 2:
-        print("No input argument passed. Exiting.")
+        print("No webhook data provided.")
         sys.exit(1)
 
-    print("Reading input argument...")
     raw_input = sys.argv[1]
     print(f"Raw sys.argv[1]: {raw_input}")
 
-    wrapper = json.loads(raw_input)
-    request_body = wrapper.get("RequestBody", "")
+    # Parse CloudEvent envelope
+    event = json.loads(raw_input)
+    if isinstance(event, list):
+        event = event[0]
 
-    if not request_body:
-        print("Missing 'RequestBody' in webhook data.")
+    print(f"Parsed CloudEvent: {event}")
+
+    data = event.get("data", {})
+    resource_uri = data.get("resourceUri")
+    if not resource_uri:
+        print("Missing resourceUri in event data.")
         sys.exit(1)
 
-    print(f"Raw RequestBody: {request_body}")
+    print(f"Resource URI: {resource_uri}")
 
-    # Make sure the RequestBody uses double quotes, then parse
-    try:
-        events = json.loads(request_body)
-    except json.JSONDecodeError as je:
-        print(f"JSON parsing error in RequestBody: {str(je)}")
-        sys.exit(1)
+    # Extract subscription ID from the URI dynamically
+    subscription_id = resource_uri.split("/")[2]
+    print(f"Detected subscription ID: {subscription_id}")
 
-    if not isinstance(events, list):
-        events = [events]
+    resource_client = ResourceManagementClient(DefaultAzureCredential(), subscription_id)
+    resource = resource_client.resources.get_by_id(resource_uri, api_version="2021-04-01")
+    tags = resource.tags or {}
+    print(f"Resource tags: {tags}")
 
-    resource_client = get_resource_client()
+    ci_value = tags.get("syf:application:ci")
+    if not ci_value:
+        print("syf:application:ci tag not found. Skipping.")
+        sys.exit(0)
 
-    for event in events:
-        print("Processing one event...")
-        resource_id = event.get("data", {}).get("resourceUri")
-        if not resource_id:
-            print("No resourceUri found in event. Skipping.")
-            continue
+    print(f"Found CI value: {ci_value}")
 
-        print(f"Target resource: {resource_id}")
-        resource = resource_client.resources.get_by_id(resource_id, api_version="2021-04-01")
-        tags = resource.tags or {}
-        print(f"Existing tags: {tags}")
+    new_tags = get_servicenow_metadata(ci_value)
+    new_tags["syf:application:ci"] = ci_value
 
-        ci_value = None
-        for key, value in tags.items():
-            if key.lower() == "syf:application:ci":
-                ci_value = value
-                break
+    update_tags(resource_client, resource_uri, new_tags)
 
-        if not ci_value:
-            print("CI tag not found. Skipping this resource.")
-            continue
-
-        print(f"CI value: {ci_value}")
-        new_tags = get_servicenow_metadata(ci_value)
-        new_tags["syf:application:ci"] = ci_value
-
-        update_tags(resource_client, resource_id, new_tags)
-
-    print("Runbook completed.")
+    print("Automation completed.")
 
 except Exception as e:
     print(f"Unhandled error: {str(e)}")
