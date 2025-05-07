@@ -64,15 +64,21 @@ def get_ci_metadata(ci_value):
         "syf:application:short_name": ci_data.get("short_name", "unknown")
     }
 
-def update_resource_tags(client, resource_id, updated_tags):
+
+def update_resource_tags(client, resource_id, updated_tags, resource):
     """Apply new tags to the resource."""
     print(f"Applying tags to {resource_id}: {updated_tags}")
-    client.resources.update_by_id(
+    parameters = {
+        "location": resource.location,
+        "tags": updated_tags
+    }
+    result = client.resources.begin_update_by_id(
         resource_id=resource_id,
         api_version=DEFAULT_API_VERSION,
-        parameters={"tags": updated_tags}
-    )
-
+        parameters=parameters
+    ).result()
+    print("Update result:", result.as_dict())
+    
 def process_event(event):
     """Main logic for a single event."""
     resource_id = get_resource_id(event)
