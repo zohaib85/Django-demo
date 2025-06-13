@@ -1,0 +1,55 @@
+import requests
+from azure.identity import DefaultAzureCredential
+
+def update_resource_tags(resource_id, updated_tags):
+    """Patch resource tags using Azure REST API and managed identity token."""
+    print(f"Patching tags to {resource_id}: {updated_tags}")
+
+    # Extract provider and type for API version discovery
+    parts = resource_id.lower().split("/")
+
+    try:
+        provider_namespace_index = parts.index("providers") + 1
+        provider_namespace = parts[provider_namespace_index]
+        resource_type = parts[provider_namespace_index + 1]
+    except ValueError:
+        raise Exception("Could not parse provider or resource type from resource ID")
+
+    # Get token via managed identity
+    credential = DefaultAzureCredential()
+    token = credential.get_token("https://management.azure.com/.default").token
+
+    # Discover API version (static fallback can be used if needed)
+    from azure.mgmt.resource import ResourceManagementClient
+    from azure.identity import DefaultAzureCredential
+
+    sub_id = parts[2]  # Assuming /subscriptions/{sub_id}/... in resource_id
+    resource_client = ResourceManagementClient(credential, sub_id)
+    provider = resource_client.providers.get(provider_namespace)
+
+    api_version = None
+    for rt in provider.resource_types:
+        if rt.resource_type.lower() == resource_type:
+            api_version = rt.api_versions[0]
+            break
+
+    if not api_version:
+        raise Exception(f"No API version found for {provider_namespace}/{resource_type}")
+
+    # REST PATCH call to Azure ARM
+    url = f"https://management.azure.com{resource_id}?api-version={api_version}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "tags": updated_tags
+    }
+
+    response = requests.patch(url, headers=headers, json=payload)
+
+    if response.status_code not in (200, 201):
+        raise Exception(f"Tag update failed: {response.status_code} - {response.text}")
+
+    print("Tags patched successfully.")
+    return response.json()["tags"]
