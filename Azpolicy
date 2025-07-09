@@ -31,3 +31,40 @@
     }
   }
 }
+
+
+
+
+
+{
+  "displayName": "Allow only approved SKUs for Cognitive Services deployments",
+  "mode": "Indexed",
+  "description": "Allows only specified Cognitive Services deployment SKUs (e.g., Standard, DataZoneStandard).",
+  "parameters": {
+    "allowedSkus": {
+      "type": "Array",
+      "metadata": {
+        "displayName": "Allowed SKUs",
+        "description": "List of allowed SKUs for Microsoft.CognitiveServices/accounts/deployments."
+      }
+    }
+  },
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "type",
+          "equals": "Microsoft.CognitiveServices/accounts/deployments"
+        },
+        {
+          "field": "Microsoft.CognitiveServices/accounts/deployments/sku.name",
+          "notIn": "[parameters('allowedSkus')]"
+        }
+      ]
+    },
+    "then": {
+      "effect": "deny"
+    }
+  }
+}
+
