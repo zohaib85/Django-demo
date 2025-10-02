@@ -1,69 +1,60 @@
- # Azure AI Compliance Evidence Checklist
+# Evidence Mapping for Gen-AI Data Privacy & Compliance
 
-This checklist guides the analyst in capturing compliance evidence for Azure AI Foundry, GPT, and Embedding models.  
-Each screenshot must include visible browser metadata (URL bar, date/time in footer).
-
----
-
-## Checklist of Screenshots (with URLs and Sections)
-
-- [ ] **01_AzureAI_PrivacyStatement.png**  
-  URL: [https://privacy.microsoft.com/en-us/privacystatement](https://privacy.microsoft.com/en-us/privacystatement)  
-  **Screenshot Area:** Section “How Microsoft collects and uses data”  
-  **Reason:** Shows Microsoft’s privacy commitments for customer data.
-
-- [ ] **02_AzureAI_ResponsibleAI.png**  
-  URL: [https://www.microsoft.com/en-us/ai/responsible-ai](https://www.microsoft.com/en-us/ai/responsible-ai)  
-  **Screenshot Area:** Section “Responsible AI principles” and “Compliance framework”  
-  **Reason:** Proves that Microsoft adheres to Responsible AI policies.
-
-- [ ] **03_OpenAI_DataPrivacy.png**  
-  URL: [https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy)  
-  **Screenshot Area:** Paragraph “Customer data is not used to train OpenAI models”  
-  **Reason:** Demonstrates no training occurs on customer data.
-
-- [ ] **04_DataRetention_Policy.png**  
-  URL: [https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy#how-long-is-customer-data-retained](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy#how-long-is-customer-data-retained)  
-  **Screenshot Area:** “Data retention policy” table/paragraph  
-  **Reason:** Shows the maximum retention of customer data.
-
-- [ ] **05_PCI_PII_Exclusion.png**  
-  URL: [https://learn.microsoft.com/en-us/azure/compliance/offerings/](https://learn.microsoft.com/en-us/azure/compliance/offerings/)  
-  **Screenshot Area:** PCI DSS / PII compliance table for Cognitive Services  
-  **Reason:** Demonstrates that sensitive data is protected and excluded from training.
-
-- [ ] **06_EncryptionAtRest.png**  
-  URL: [https://learn.microsoft.com/en-us/azure/security/fundamentals/encryption-overview](https://learn.microsoft.com/en-us/azure/security/fundamentals/encryption-overview)  
-  **Screenshot Area:** Section “Encryption at Rest” and “Encryption in Transit”  
-  **Reason:** Shows data is encrypted both at rest and in transit.
-
-- [ ] **07_Compliance_Certifications.png**  
-  URL: [https://learn.microsoft.com/en-us/azure/compliance/](https://learn.microsoft.com/en-us/azure/compliance/)  
-  **Screenshot Area:** Table listing SOC 2, ISO, GDPR certifications  
-  **Reason:** Provides evidence of Microsoft’s compliance certifications.
-
-- [ ] **08_ModelDataUsage.png**  
-  URL: [https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy#is-customer-data-used-to-train-microsofts-models](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy#is-customer-data-used-to-train-microsofts-models)  
-  **Screenshot Area:** Paragraph stating customer data is not used to train models  
-  **Reason:** Confirms LLMs do not consume customer data.
-
-- [ ] **09_Data_Controls.png**  
-  URL: [https://learn.microsoft.com/en-us/azure/key-vault/general/overview](https://learn.microsoft.com/en-us/azure/key-vault/general/overview)  
-  **Screenshot Area:** Section on Key Vault integration for policy enforcement  
-  **Reason:** Shows how data is protected via governance controls.
+## Requirement 1: No sensitive financial, PCI, or PII data used in training/fine-tuning/inference without explicit controls
+- **URL**: [Azure OpenAI Data Privacy](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy)
+- **Section to Capture**: “Customer prompts and responses are not used to train, retrain, or improve the models”
+- **Screenshot Instructions**: Open → Scroll to section → Capture heading and first 6 lines of text  
+- **Filename**: `01-data-privacy-no-training.png`
 
 ---
 
-## Browser Metadata Requirements
-
-- Capture full URL in the browser address bar.  
-- Ensure system date/time is visible in the screenshot footer.  
-- Use Chrome or Edge in full-screen mode.  
-- Do not crop out metadata.
+## Requirement 2: Explicit encryption controls for data
+- **URL**: [Azure AI Security Features](https://learn.microsoft.com/en-us/azure/ai-services/security-features)
+- **Section to Capture**: Section “Encryption”  
+- **Screenshot Instructions**: Open → Scroll to section → Capture first 6 lines about at-rest and in-transit encryption  
+- **Filename**: `02-encryption-controls.png`
 
 ---
 
-## Additional Evidence
+## Requirement 3: Data retention policy for LLMs
+- **URL**: [Azure OpenAI Data Retention](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy#data-retention)
+- **Section to Capture**: “Data retention”  
+- **Screenshot Instructions**: Scroll to section → Capture table with retention period (30 days)  
+- **Filename**: `03-data-retention-policy.png`
 
-- SOC 2 Type II Report for Azure OpenAI: [https://servicetrust.microsoft.com/](https://servicetrust.microsoft.com/)  
-- Written declaration from Microsoft’s CEO, CTO, or equivalent authoritative figure confirming data privacy posture.
+---
+
+## Requirement 4: Protective measures employed
+- **URL**: [Responsible AI and Privacy](https://learn.microsoft.com/en-us/azure/ai-services/overview-responsible-use)
+- **Section to Capture**: “Privacy and security commitments”  
+- **Screenshot Instructions**: Scroll to section → Capture first 2 paragraphs  
+- **Filename**: `04-protective-measures.png`
+
+---
+
+## Requirement 5: Written declaration / Compliance statements
+- **URL**: [Microsoft Compliance Offerings](https://learn.microsoft.com/en-us/compliance/regulatory/offering-home)
+- **Section to Capture**: Azure compliance offerings  
+- **Screenshot Instructions**: Scroll to Azure section → Capture list of certifications (ISO, SOC, PCI, HIPAA, etc.)  
+- **Filename**: `05-compliance-offerings.png`
+
+---
+
+## Requirement 6: SOC2 Report (independent audit evidence)
+- **URL**: [Microsoft Service Trust Portal](https://servicetrust.microsoft.com/)
+- **Section to Capture**: Reports > SOC Reports  
+- **Screenshot Instructions**: Log in → Navigate to SOC Reports → Capture SOC 2 Type 2 report availability screen  
+- **Filename**: `06-soc2-report.png`
+
+---
+
+## 📋 Summary Table
+
+| Requirement | URL | Section to Capture | Filename |
+|-------------|-----|---------------------|----------|
+| No PII/PCI in training | [Azure OpenAI Data Privacy](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy) | “Customer prompts and responses…” | 01-data-privacy-no-training.png |
+| Encryption controls | [Azure AI Security Features](https://learn.microsoft.com/en-us/azure/ai-services/security-features) | Section: Encryption | 02-encryption-controls.png |
+| Data retention policy | [Azure OpenAI Data Retention](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy#data-retention) | Table (30 days) | 03-data-retention-policy.png |
+| Protective measures | [Responsible AI and Privacy](https://learn.microsoft.com/en-us/azure/ai-services/overview-responsible-use) | “Privacy and security commitments” | 04-protective-measures.png |
+| Compliance certifications | [Microsoft Compliance Offerings](https://learn.microsoft.com/en-us/compliance/regulatory/offering-home) | Azure compliance offerings list | 05-compliance-offerings.png |
+| SOC2 evidence | [Microsoft Service Trust Portal](https://servicetrust.microsoft.com/) | Reports → SOC 2 Type 2 | 06-soc2-report.png |
