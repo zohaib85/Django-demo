@@ -1,0 +1,51 @@
+Evidence Mapping for Gen-AI Ethical AI & Continuous Monitoring
+
+## **Requirement 1: Responsible AI Principles**
+- **Source**: [Microsoft Responsible AI Principles](https://www.microsoft.com/ai/responsible-ai)  
+- **Section to Capture**: *“Our approach to responsible AI”* section.  
+- **Screenshot Instructions**: Capture first 6 lines explaining fairness, accountability, transparency.  
+- **Filename**: `01-responsible-ai-principles.png`
+
+---
+
+## **Requirement 2: Continuous Monitoring for Fairness**
+- **Source**: [Azure AI Responsible AI Transparency Note](https://learn.microsoft.com/en-us/azure/ai-services/responsible-use-of-ai)  
+- **Section to Capture**: *“Mitigating harmful and unfair outputs”* section.  
+- **Screenshot Instructions**: Capture first 2–3 paragraphs describing continuous monitoring and fairness safeguards.  
+- **Filename**: `02-continuous-monitoring.png`
+
+---
+
+## **Requirement 3: Bias and Fairness Evaluation**
+- **Source**: [Azure Machine Learning Responsible AI dashboard](https://learn.microsoft.com/en-us/azure/machine-learning/responsible-ai-dashboard)  
+- **Section to Capture**: Overview section describing bias detection, fairness metrics, and monitoring.  
+- **Screenshot Instructions**: Capture first 6 lines of the dashboard overview.  
+- **Filename**: `03-bias-fairness-dashboard.png`
+
+---
+
+## **Requirement 4: Compliance Declarations**
+- **Source**: [Microsoft Compliance Offerings](https://learn.microsoft.com/en-us/compliance/regulatory/offering-home)  
+- **Section to Capture**: Certifications relevant to AI ethics (SOC, ISO, GDPR, financial regulations).  
+- **Screenshot Instructions**: Scroll to Azure certifications → Capture the relevant list.  
+- **Filename**: `04-compliance-offerings.png`
+
+---
+
+## **Requirement 5: SOC2 Report Evidence**
+- **Source**: [Microsoft Service Trust Portal](https://servicetrust.microsoft.com/) (login required)  
+- **Section to Capture**: Reports → SOC Reports.  
+- **Screenshot Instructions**: Log in → Navigate to SOC Reports → Capture availability of SOC 2 Type 2 report.  
+- **Filename**: `05-soc2-report.png`
+
+---
+
+# ✅ Summary Table for Analyst
+
+| Requirement | URL | Section to Capture | Filename |
+|-------------|-----|---------------------|----------|
+| Responsible AI Principles | https://www.microsoft.com/ai/responsible-ai | “Our approach to responsible AI” section | 01-responsible-ai-principles.png |
+| Continuous Monitoring | https://learn.microsoft.com/en-us/azure/ai-services/responsible-use-of-ai | “Mitigating harmful and unfair outputs” section | 02-continuous-monitoring.png |
+| Bias/Fairness Dashboard | https://learn.microsoft.com/en-us/azure/machine-learning/responsible-ai-dashboard | Dashboard overview section | 03-bias-fairness-dashboard.png |
+| Compliance Certifications | https://learn.microsoft.com/en-us/compliance/regulatory/offering-home | Azure compliance list | 04-compliance-offerings.png |
+| SOC2 Evidence | https://servicetrust.microsoft.com/ | Reports → SOC 2 Type 2 | 05-soc2-report.png |
