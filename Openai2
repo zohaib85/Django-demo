@@ -1,0 +1,60 @@
+# 📋 Evidence Mapping for Gen-AI Access Security (Auth, Authorization, Audit Logging)
+
+## **Requirement 1: Robust Authentication**
+- **Source**: [Azure Active Directory Authentication for Azure AI](https://learn.microsoft.com/en-us/azure/ai-services/authentication)  
+- **Section to Capture**: *“Authenticate requests to Azure AI services”*  
+- **Screenshot Instructions**: Open → Scroll to section → Capture first 6 lines (explains API key and Azure AD authentication options).  
+- **Filename**: `01-authentication.png`
+
+---
+
+## **Requirement 2: Role-based Authorization**
+- **Source**: [Azure role-based access control (Azure RBAC) for AI services](https://learn.microsoft.com/en-us/azure/ai-services/security-features#authentication-and-authorization)  
+- **Section to Capture**: *“Authentication and authorization”* subsection.  
+- **Screenshot Instructions**: Scroll to section → Capture first 2 paragraphs + RBAC table snippet.  
+- **Filename**: `02-authorization-rbac.png`
+
+---
+
+## **Requirement 3: Audit Logging & Monitoring**
+- **Source**: [Azure Monitor Logs for AI services](https://learn.microsoft.com/en-us/azure/ai-services/monitoring)  
+- **Section to Capture**: *“Monitoring requests and logging”* section.  
+- **Screenshot Instructions**: Scroll to section → Capture first 6 lines describing audit logging and monitoring.  
+- **Filename**: `03-audit-logging.png`
+
+---
+
+## **Requirement 4: Preventing Model Leakage**
+- **Source**: [Azure AI Security Features](https://learn.microsoft.com/en-us/azure/ai-services/security-features)  
+- **Section to Capture**: *“Customer data is not used to retrain models”* (model protection + isolation).  
+- **Screenshot Instructions**: Scroll to that section → Capture first 2 paragraphs.  
+- **Filename**: `04-model-leakage-protection.png`
+
+---
+
+## **Requirement 5: Compliance Declarations**
+- **Source**: [Microsoft Compliance Offerings](https://learn.microsoft.com/en-us/compliance/regulatory/offering-home)  
+- **Section to Capture**: Azure compliance certifications (SOC, ISO, HIPAA, PCI, etc.).  
+- **Screenshot Instructions**: Scroll to Azure section → Capture certifications list.  
+- **Filename**: `05-compliance-offerings.png`
+
+---
+
+## **Requirement 6: SOC2 Report Evidence**
+- **Source**: [Microsoft Service Trust Portal](https://servicetrust.microsoft.com/) (login required)  
+- **Section to Capture**: Reports → SOC Reports.  
+- **Screenshot Instructions**: Log in → Navigate to SOC Reports → Capture availability of SOC 2 Type 2 for Azure AI.  
+- **Filename**: `06-soc2-report.png`
+
+---
+
+# ✅ Summary Table for Analyst
+
+| Requirement | URL | Section to Capture | Filename |
+|-------------|-----|---------------------|----------|
+| Authentication | https://learn.microsoft.com/en-us/azure/ai-services/authentication | “Authenticate requests to Azure AI services” | 01-authentication.png |
+| Authorization (RBAC) | https://learn.microsoft.com/en-us/azure/ai-services/security-features#authentication-and-authorization | “Authentication and authorization” + RBAC table | 02-authorization-rbac.png |
+| Audit logging | https://learn.microsoft.com/en-us/azure/ai-services/monitoring | “Monitoring requests and logging” | 03-audit-logging.png |
+| Prevent model leakage | https://learn.microsoft.com/en-us/azure/ai-services/security-features | Section on customer data not retrained | 04-model-leakage-protection.png |
+| Compliance certifications | https://learn.microsoft.com/en-us/compliance/regulatory/offering-home | Azure compliance offerings list | 05-compliance-offerings.png |
+| SOC2 evidence | https://servicetrust.microsoft.com/ | Reports → SOC 2 Type 2 | 06-soc2-report.png |
