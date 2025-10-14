@@ -1,78 +1,111 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.110"
+variable "subscription_id" {
+  description = "Azure Subscription ID for Capacity Reservations"
+  type        = string
+}
+
+variable "vm_sku" {
+  description = "VM SKU for capacity reservation"
+  type        = string
+  default     = "Standard_D8ds_v5"
+}
+
+variable "crg_config" {
+  description = "Configuration for regions, zones, and required capacity"
+  type = map(list(object({
+    zone          = number
+    logical_zone  = number
+    capacity      = number
+  })))
+}
+
+
+subscription_id = "<YOUR_SUBSCRIPTION_ID>" # 🔹 Replace per subscription
+
+crg_config = {
+  CIN = [
+    { zone = 1, logical_zone = 3, capacity = 135 },
+    { zone = 2, logical_zone = 2, capacity = 125 },
+    { zone = 3, logical_zone = 1, capacity = 125 }
+  ]
+  SEA = [
+    { zone = 1, logical_zone = 3, capacity = 135 },
+    { zone = 2, logical_zone = 2, capacity = 125 },
+    { zone = 3, logical_zone = 1, capacity = 125 }
+  ]
+  EUS = [
+    { zone = 1, logical_zone = 3, capacity = 132 },
+    { zone = 2, logical_zone = 2, capacity = 142 },
+    { zone = 3, logical_zone = 1, capacity = 132 }
+  ]
+  WUS = [
+    { zone = 1, logical_zone = 3, capacity = 142 },
+    { zone = 2, logical_zone = 2, capacity = 132 },
+    { zone = 3, logical_zone = 1, capacity = 50 }
+  ]
+}
+
+vm_sku = "Standard_D8ds_v5"
+
+
+# =======================
+# Resource Groups
+# =======================
+resource "azurerm_resource_group" "crg_rg" {
+  for_each = var.crg_config
+
+  name     = "rg-${lower(each.key)}-capacity"
+  location = lower(each.key)
+
+  tags = {
+    region = each.key
+    type   = "capacity"
+  }
+}
+
+# =======================
+# Capacity Reservation Groups
+# =======================
+resource "azurerm_capacity_reservation_group" "crg" {
+  for_each = var.crg_config
+
+  name                = "${each.key}-crg"
+  location            = lower(each.key)
+  resource_group_name = azurerm_resource_group.crg_rg[each.key].name
+
+  tags = {
+    region  = each.key
+    purpose = "vdi-capacity"
+  }
+}
+
+# =======================
+# Capacity Reservations
+# =======================
+resource "azurerm_capacity_reservation" "vm_reservation" {
+  for_each = {
+    for region, zones in var.crg_config : 
+    for zone in zones : "${region}-${zone.zone}" => {
+      region        = region
+      zone          = zone.zone
+      capacity      = zone.capacity
+      logical_zone  = zone.logical_zone
     }
   }
-}
 
-provider "azurerm" {
-  features {}
-  subscription_id = "<YOUR_SUBSCRIPTION_ID>" # 🔹 Replace with target subscription
-}
+  name                          = "cr-${each.key}"
+  location                      = lower(each.value.region)
+  resource_group_name           = azurerm_resource_group.crg_rg[each.value.region].name
+  zone                          = each.value.zone
+  capacity_reservation_group_id = azurerm_capacity_reservation_group.crg[each.value.region].id
 
-locals {
-  # Region and logical mappings from your sheet
-  crg_config = {
-    CIN = [
-      { zone = 1, logical_zone = 3 },
-      { zone = 2, logical_zone = 2 },
-      { zone = 3, logical_zone = 1 }
-    ]
-    SEA = [
-      { zone = 1, logical_zone = 3 },
-      { zone = 2, logical_zone = 2 },
-      { zone = 3, logical_zone = 1 }
-    ]
-    EUS = [
-      { zone = 1, logical_zone = 3 },
-      { zone = 2, logical_zone = 2 },
-      { zone = 3, logical_zone = 1 }
-    ]
-    WUS = [
-      { zone = 1, logical_zone = 3 },
-      { zone = 2, logical_zone = 2 },
-      { zone = 3, logical_zone = 1 }
-    ]
-  }
-
-  # Standard VM SKU
-  vm_sku = "Standard_D8ds_v5"
-}
-
-# Create CRGs dynamically
-resource "azurerm_capacity_reservation_group" "crg" {
-  for_each = { for region, zones in local.crg_config : region => zones }
-
-  name                = "${each.key}-crg-zone-${each.value[0].zone}"
-  location            = lower(each.key)
-  resource_group_name = "rg-${lower(each.key)}-capacity"
-
-  # Optional tags for clarity
-  tags = {
-    environment = "prod"
-    region      = each.key
-    zone        = tostring(each.value[0].zone)
-    logicalZone = tostring(each.value[0].logical_zone)
-  }
-}
-
-# Example of a Capacity Reservation inside each CRG
-resource "azurerm_capacity_reservation" "vm_reservation" {
-  for_each = toset(flatten([
-    for region, zones in local.crg_config : [
-      for zone in zones : "${region}-${zone.zone}"
-    ]
-  ]))
-
-  name                        = "cr-${each.key}"
-  capacity_reservation_group_id = azurerm_capacity_reservation_group.crg[split("-", each.key)[0]].id
   sku {
-    name = local.vm_sku
-    capacity = 125 # 🔹 You can adjust per sheet (number of VMs reserved)
+    name     = var.vm_sku
+    capacity = each.value.capacity
   }
-  location            = lower(split("-", each.key)[0])
-  zone                = tonumber(split("-", each.key)[1])
-  resource_group_name = "rg-${lower(split("-", each.key)[0])}-capacity"
+
+  tags = {
+    region       = each.value.region
+    zone         = tostring(each.value.zone)
+    logical_zone = tostring(each.value.logical_zone)
+  }
 }
