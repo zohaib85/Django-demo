@@ -14,10 +14,6 @@
         {
           "anyOf": [
             {
-              "field": "Microsoft.Web/sites/ftpPublishingEnabled",
-              "equals": true
-            },
-            {
               "field": "Microsoft.Web/sites/siteConfig.ftpsState",
               "notEquals": "Disabled"
             },
@@ -26,20 +22,20 @@
               "equals": false
             },
             {
-              "field": "Microsoft.Web/sites/siteConfig.minTlsVersion",
-              "notEquals": "1.2"
-            },
-            {
               "field": "Microsoft.Web/sites/httpsOnly",
               "equals": false
             },
             {
-              "field": "Microsoft.Web/sites/siteConfig.scmHttp20Enabled",
-              "equals": false
-            },
-            {
-              "field": "Microsoft.Web/sites/siteConfig.scmIpSecurityRestrictionsDefaultAction",
-              "equals": "Allow"
+              "anyOf": [
+                {
+                  "field": "Microsoft.Web/sites/siteConfig.scmIpSecurityRestrictionsDefaultAction",
+                  "notEquals": "Deny"
+                },
+                {
+                  "field": "Microsoft.Web/sites/scmSiteAlsoStopped",
+                  "equals": false
+                }
+              ]
             }
           ]
         }
@@ -49,83 +45,9 @@
       "effect": "deny"
     }
   },
-  "parameters": {},
   "metadata": {
     "category": "App Service",
-    "version": "1.0.0",
-    "displayName": "Deny Logic App Standard if FTP/SCM enabled or HTTP/HTTPS settings incorrect"
+    "displayName": "Deny Logic Apps (Standard) if FTPS/SCM insecure or HTTP/HTTPS settings not enforced",
+    "version": "1.0.0"
   }
 }
-
-
-
-{
-  "properties": {
-    "displayName": "Allow only approved SKUs for Cognitive Services deployments",
-    "description": "Allows only specified Cognitive Services deployment SKUs (e.g., Standard, DataZoneStandard).",
-    "mode": "Indexed",
-    "parameters": {
-      "allowedSkus": {
-        "type": "Array",
-        "metadata": {
-          "displayName": "Allowed SKUs",
-          "description": "List of allowed SKUs for Microsoft.CognitiveServices/accounts/deployments."
-        }
-      }
-    },
-    "policyRule": {
-      "if": {
-        "allOf": [
-          {
-            "field": "type",
-            "equals": "Microsoft.CognitiveServices/accounts/deployments"
-          },
-          {
-            "field": "Microsoft.CognitiveServices/accounts/deployments/sku.name",
-            "notIn": "[parameters('allowedSkus')]"
-          }
-        ]
-      },
-      "then": {
-        "effect": "deny"
-      }
-    }
-  }
-}
-
-
-
-
-
-{
-  "displayName": "Allow only approved SKUs for Cognitive Services deployments",
-  "mode": "Indexed",
-  "description": "Allows only specified Cognitive Services deployment SKUs (e.g., Standard, DataZoneStandard).",
-  "parameters": {
-    "allowedSkus": {
-      "type": "Array",
-      "metadata": {
-        "displayName": "Allowed SKUs",
-        "description": "List of allowed SKUs for Microsoft.CognitiveServices/accounts/deployments."
-      }
-    }
-  },
-  "policyRule": {
-    "if": {
-      "allOf": [
-        {
-          "field": "type",
-          "equals": "Microsoft.CognitiveServices/accounts/deployments"
-        },
-        {
-          "field": "Microsoft.CognitiveServices/accounts/deployments/sku.name",
-          "notIn": "[parameters('allowedSkus')]"
-        }
-      ]
-    },
-    "then": {
-      "effect": "deny"
-    }
-  }
-}
-
