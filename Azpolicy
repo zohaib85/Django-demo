@@ -1,12 +1,12 @@
 {
   "properties": {
-    "displayName": "Standard Logic App: Enforce HTTPS, HTTP/2.0, and Disable FTP",
+    "displayName": "Standard Logic App: Enforce HTTPS and Disable FTP",
     "policyType": "Custom",
-    "mode": "All",
-    "description": "This DeployIfNotExists policy ensures Standard Logic Apps (Microsoft.Web/sites) are configured for HTTPS only, use HTTP/2.0, and have FTP deployment disabled for enhanced security.",
+    "mode": "Indexed",
+    "description": "This DeployIfNotExists policy ensures Standard Logic Apps (Microsoft.Web/sites) are configured for HTTPS only and have FTP deployment disabled.",
     "metadata": {
       "category": "Integration",
-      "version": "1.0.3"
+      "version": "1.0.0"
     },
     "parameters": {
       "effect": {
@@ -36,10 +36,6 @@
                 "equals": false
               },
               {
-                "field": "Microsoft.Web/sites/siteConfig.http20Enabled",
-                "notEquals": true
-              },
-              {
                 "field": "Microsoft.Web/sites/ftpsState",
                 "notEquals": "Disabled"
               }
@@ -56,10 +52,6 @@
             "allOf": [
               {
                 "field": "Microsoft.Web/sites/httpsOnly",
-                "equals": true
-              },
-              {
-                "field": "Microsoft.Web/sites/siteConfig.http20Enabled",
                 "equals": true
               },
               {
@@ -97,7 +89,6 @@
                       "[resourceId('Microsoft.Web/sites', parameters('resourceName'))]"
                     ],
                     "properties": {
-                      "http20Enabled": true,
                       "ftpsState": "Disabled"
                     }
                   }
