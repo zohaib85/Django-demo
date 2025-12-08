@@ -10,44 +10,48 @@
         {
           "field": "kind",
           "contains": "workflowapp"
-        },
-        {
-          "anyOf": [
-            {
-              "field": "Microsoft.Web/sites/siteConfig.ftpsState",
-              "notEquals": "Disabled"
-            },
-            {
-              "field": "Microsoft.Web/sites/siteConfig.http20Enabled",
-              "equals": false
-            },
-            {
-              "field": "Microsoft.Web/sites/httpsOnly",
-              "equals": false
-            },
-            {
-              "anyOf": [
-                {
-                  "field": "Microsoft.Web/sites/siteConfig.scmIpSecurityRestrictionsDefaultAction",
-                  "notEquals": "Deny"
-                },
-                {
-                  "field": "Microsoft.Web/sites/scmSiteAlsoStopped",
-                  "equals": false
-                }
-              ]
-            }
-          ]
         }
       ]
     },
     "then": {
-      "effect": "deny"
+      "effect": "modify",
+      "details": {
+        "roleDefinitionIds": [
+          "/providers/microsoft.authorization/roleDefinitions/fd9b6dfd-7f85-4674-aa62-1f9b0b0b2e46"
+        ],
+        "operations": [
+          {
+            "operation": "addOrReplace",
+            "field": "Microsoft.Web/sites/httpsOnly",
+            "value": true
+          },
+          {
+            "operation": "addOrReplace",
+            "field": "Microsoft.Web/sites/siteConfig.http20Enabled",
+            "value": true
+          },
+          {
+            "operation": "addOrReplace",
+            "field": "Microsoft.Web/sites/siteConfig.ftpsState",
+            "value": "Disabled"
+          },
+          {
+            "operation": "addOrReplace",
+            "field": "Microsoft.Web/sites/siteConfig.scmIpSecurityRestrictionsDefaultAction",
+            "value": "Deny"
+          },
+          {
+            "operation": "addOrReplace",
+            "field": "Microsoft.Web/sites/scmSiteAlsoStopped",
+            "value": true
+          }
+        ]
+      }
     }
   },
   "metadata": {
     "category": "App Service",
-    "displayName": "Deny Logic Apps (Standard) if FTPS/SCM insecure or HTTP/HTTPS settings not enforced",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "displayName": "Modify Logic App Standard to enforce HTTPS only, HTTP/2, FTPS disabled, SCM locked down"
   }
 }
