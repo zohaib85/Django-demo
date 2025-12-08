@@ -1,39 +1,75 @@
 {
   "properties": {
-    "displayName": "Deploy secure settings for Standard Logic Apps",
+    "displayName": "Standard Logic App: Enforce HTTPS Only, HTTP/2.0, and Disable FTP",
     "policyType": "Custom",
     "mode": "Indexed",
-    "description": "Automatically configures FTP state, HTTP version, and HTTPS-only settings for Standard Logic Apps.",
+    "description": "This DeployIfNotExists policy ensures Standard Logic Apps (Microsoft.Web/sites) are configured for HTTPS only, use HTTP/2.0, and have FTP deployment disabled for enhanced security.",
     "metadata": {
-      "version": "1.0.0",
-      "category": "Logic Apps"
+      "category": "Integration",
+      "version": "1.0.2"
     },
-    "parameters": {},
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "DeployIfNotExists",
+          "Disabled"
+        ],
+        "defaultValue": "DeployIfNotExists"
+      }
+    },
     "policyRule": {
       "if": {
         "allOf": [
           {
+            // Targeting Standard Logic Apps which use the App Service resource provider
             "field": "type",
             "equals": "Microsoft.Web/sites"
           },
           {
-            "field": "kind",
-            "like": "functionapp"
-          },
-          {
-            "field": "tags['logicAppType']",
-            "equals": "standard"
+            "anyOf": [
+              {
+                "field": "Microsoft.Web/sites/httpsOnly",
+                "equals": false
+              },
+              {
+                "field": "Microsoft.Web/sites/siteConfig.http20Enabled",
+                "notEquals": true
+              },
+              {
+                "field": "Microsoft.Web/sites/ftpsState",
+                "notEquals": "Disabled"
+              }
+            ]
           }
         ]
       },
       "then": {
-        "effect": "deployIfNotExists",
+        "effect": "[parameters('effect')]",
         "details": {
-          "type": "Microsoft.Web/sites/config",
-          "name": "web",
-          "roleDefinitionIds": [
-            "/providers/Microsoft.Authorization/roleDefinitions/contributor"
-          ],
+          "type": "Microsoft.Web/sites",
+          "name": "[field('name')]",
+          "deploymentScope": "resourceGroup",
+          "existenceCondition": {
+            "allOf": [
+              {
+                "field": "Microsoft.Web/sites/httpsOnly",
+                "equals": true
+              },
+              {
+                "field": "Microsoft.Web/sites/siteConfig.http20Enabled",
+                "equals": true
+              },
+              {
+                "field": "Microsoft.Web/sites/ftpsState",
+                "equals": "Disabled"
+              }
+            ]
+          },
           "deployment": {
             "properties": {
               "mode": "incremental",
@@ -41,25 +77,38 @@
                 "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
                 "contentVersion": "1.0.0.0",
                 "parameters": {
-                  "siteName": {
+                  "resourceName": {
                     "type": "string"
                   }
                 },
                 "resources": [
+                  // 1. Enforce HTTPS Only (Updates the main site properties)
+                  {
+                    "type": "Microsoft.Web/sites",
+                    "apiVersion": "2021-02-01",
+                    "name": "[parameters('resourceName')]",
+                    "location": "[resourceGroup().location]",
+                    "properties": {
+                      "httpsOnly": true
+                    }
+                  },
+                  // 2. Enforce HTTP/2.0 and Disable FTP (Updates the /config/web resource)
                   {
                     "type": "Microsoft.Web/sites/config",
-                    "apiVersion": "2022-03-01",
-                    "name": "[concat(parameters('siteName'), '/web')]",
+                    "apiVersion": "2021-02-01",
+                    "name": "[concat(parameters('resourceName'), '/web')]",
+                    "dependsOn": [
+                      "[resourceId('Microsoft.Web/sites', parameters('resourceName'))]"
+                    ],
                     "properties": {
-                      "ftpsState": "Disabled",
                       "http20Enabled": true,
-                      "httpsOnly": true
+                      "ftpsState": "Disabled"
                     }
                   }
                 ]
               },
               "parameters": {
-                "siteName": {
+                "resourceName": {
                   "value": "[field('name')]"
                 }
               }
