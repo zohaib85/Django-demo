@@ -1,4 +1,65 @@
 {
+  "mode": "Indexed",
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "type",
+          "equals": "Microsoft.Web/sites"
+        },
+        {
+          "field": "kind",
+          "contains": "workflowapp"
+        },
+        {
+          "anyOf": [
+            {
+              "field": "Microsoft.Web/sites/ftpPublishingEnabled",
+              "equals": true
+            },
+            {
+              "field": "Microsoft.Web/sites/siteConfig.ftpsState",
+              "notEquals": "Disabled"
+            },
+            {
+              "field": "Microsoft.Web/sites/siteConfig.http20Enabled",
+              "equals": false
+            },
+            {
+              "field": "Microsoft.Web/sites/siteConfig.minTlsVersion",
+              "notEquals": "1.2"
+            },
+            {
+              "field": "Microsoft.Web/sites/httpsOnly",
+              "equals": false
+            },
+            {
+              "field": "Microsoft.Web/sites/siteConfig.scmHttp20Enabled",
+              "equals": false
+            },
+            {
+              "field": "Microsoft.Web/sites/siteConfig.scmIpSecurityRestrictionsDefaultAction",
+              "equals": "Allow"
+            }
+          ]
+        }
+      ]
+    },
+    "then": {
+      "effect": "deny"
+    }
+  },
+  "parameters": {},
+  "metadata": {
+    "category": "App Service",
+    "version": "1.0.0",
+    "displayName": "Deny Logic App Standard if FTP/SCM enabled or HTTP/HTTPS settings incorrect"
+  }
+}
+
+
+
+{
   "properties": {
     "displayName": "Allow only approved SKUs for Cognitive Services deployments",
     "description": "Allows only specified Cognitive Services deployment SKUs (e.g., Standard, DataZoneStandard).",
