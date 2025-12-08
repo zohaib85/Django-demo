@@ -1,120 +1,67 @@
 {
-  "mode": "Indexed",
-  "policyRule": {
-    "if": {
-      "allOf": [
-        {
-          "field": "type",
-          "equals": "Microsoft.Web/sites"
-        },
-        {
-          "field": "kind",
-          "contains": "workflowapp"
-        },
-        {
-          "anyOf": [
-            {
-              "field": "Microsoft.Web/sites/httpsOnly",
-              "equals": false
-            },
-            {
-              "field": "Microsoft.Web/sites/siteConfig.http20Enabled",
-              "equals": false
-            },
-            {
-              "field": "Microsoft.Web/sites/siteConfig.ftpsState",
-              "notEquals": "Disabled"
-            },
-            {
-              "field": "Microsoft.Web/sites/siteConfig.scmIpSecurityRestrictionsDefaultAction",
-              "notEquals": "Deny"
-            },
-            {
-              "field": "Microsoft.Web/sites/scmSiteAlsoStopped",
-              "equals": false
-            }
-          ]
-        }
-      ]
+  "properties": {
+    "displayName": "Deploy secure settings for Standard Logic Apps",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "Automatically configures FTP state, HTTP version, and HTTPS-only settings for Standard Logic Apps.",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Logic Apps"
     },
-    "then": {
-      "effect": "DeployIfNotExists",
-      "details": {
-        "type": "Microsoft.Web/sites/config",
-        "roleDefinitionIds": [
-          "/providers/microsoft.authorization/roleDefinitions/fd9b6dfd-7f85-4674-aa62-1f9b0b0b2e46" 
-        ],
-        "existenceCondition": {
-          "allOf": [
-            {
-              "field": "Microsoft.Web/sites/httpsOnly",
-              "equals": true
-            },
-            {
-              "field": "Microsoft.Web/sites/siteConfig.http20Enabled",
-              "equals": true
-            },
-            {
-              "field": "Microsoft.Web/sites/siteConfig.ftpsState",
-              "equals": "Disabled"
-            },
-            {
-              "field": "Microsoft.Web/sites/siteConfig.scmIpSecurityRestrictionsDefaultAction",
-              "equals": "Deny"
-            },
-            {
-              "field": "Microsoft.Web/sites/scmSiteAlsoStopped",
-              "equals": true
-            }
-          ]
-        },
-        "deployment": {
-          "properties": {
-            "mode": "incremental",
-            "template": {
-              "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-              "contentVersion": "1.0.0.0",
-              "resources": [
-                {
-                  "type": "Microsoft.Web/sites/config",
-                  "apiVersion": "2022-03-01",
-                  "name": "[concat(parameters('name'), '/web')]",
-                  "properties": {
-                    "http20Enabled": true,
-                    "ftpsState": "Disabled",
-                    "scmIpSecurityRestrictionsDefaultAction": "Deny",
-                    "scmSiteAlsoStopped": true
+    "parameters": {},
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Web/sites"
+          },
+          {
+            "field": "kind",
+            "like": "functionapp"
+          },
+          {
+            "field": "tags['logicAppType']",
+            "equals": "standard"
+          }
+        ]
+      },
+      "then": {
+        "effect": "deployIfNotExists",
+        "details": {
+          "type": "Microsoft.Web/sites/config",
+          "name": "web",
+          "roleDefinitionIds": [
+            "/providers/Microsoft.Authorization/roleDefinitions/contributor"
+          ],
+          "deployment": {
+            "properties": {
+              "mode": "incremental",
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "resources": [
+                  {
+                    "type": "Microsoft.Web/sites/config",
+                    "apiVersion": "2022-03-01",
+                    "name": "[concat(parameters('siteName'), '/web')]",
+                    "properties": {
+                      "ftpsState": "Disabled",
+                      "http20Enabled": true,
+                      "httpsOnly": true
+                    }
                   }
-                },
-                {
-                  "type": "Microsoft.Web/sites",
-                  "apiVersion": "2022-03-01",
-                  "name": "[parameters('name')]",
-                  "properties": {
-                    "httpsOnly": true
-                  }
-                }
-              ],
+                ]
+              },
               "parameters": {
-                "name": {
-                  "type": "string"
+                "siteName": {
+                  "value": "[field('name')]"
                 }
-              }
-            },
-            "parameters": {
-              "name": {
-                "value": "[field('name')]"
               }
             }
           }
         }
       }
     }
-  },
-  "parameters": {},
-  "metadata": {
-    "category": "App Service",
-    "version": "1.0.0",
-    "displayName": "DeployIfNotExists - Enforce HTTPS, HTTP2, FTPS Disabled, SCM Locked Down for Logic App Standard"
   }
 }
