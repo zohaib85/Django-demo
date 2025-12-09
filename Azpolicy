@@ -1,19 +1,18 @@
 {
   "properties": {
-    "displayName": "Standard Logic App: Enforce HTTPS and Disable FTP",
+    "displayName": "Logic App Standard: Disable FTP/FTPS",
     "policyType": "Custom",
     "mode": "Indexed",
-    "description": "DeployIfNotExists policy to enforce HTTPS and disable FTP on Standard Logic Apps",
+    "description": "DeployIfNotExists policy to disable FTP/FTPS for Standard Logic Apps.",
     "metadata": {
-      "category": "Integration",
-      "version": "1.0.0"
+      "category": "Integration"
     },
     "parameters": {
       "effect": {
         "type": "String",
         "metadata": {
           "displayName": "Effect",
-          "description": "Enable or disable the execution of the policy"
+          "description": "Policy effect"
         },
         "allowedValues": [
           "DeployIfNotExists",
@@ -30,35 +29,24 @@
             "equals": "Microsoft.Web/sites"
           },
           {
-            "anyOf": [
-              {
-                "field": "Microsoft.Web/sites/httpsOnly",
-                "equals": false
-              },
-              {
-                "field": "Microsoft.Web/sites/ftpsState",
-                "notEquals": "Disabled"
-              }
-            ]
+            "field": "kind",
+            "contains": "workflowapp"
+          },
+          {
+            "field": "Microsoft.Web/sites/ftpsState",
+            "notEquals": "Disabled"
           }
         ]
       },
       "then": {
         "effect": "[parameters('effect')]",
         "details": {
-          "type": "Microsoft.Web/sites",
+          "type": "Microsoft.Web/sites/config",
+          "name": "[concat(field('name'), '/web')]",
           "deploymentScope": "resourceGroup",
           "existenceCondition": {
-            "allOf": [
-              {
-                "field": "Microsoft.Web/sites/httpsOnly",
-                "equals": true
-              },
-              {
-                "field": "Microsoft.Web/sites/ftpsState",
-                "equals": "Disabled"
-              }
-            ]
+            "field": "Microsoft.Web/sites/ftpsState",
+            "equals": "Disabled"
           },
           "deployment": {
             "mode": "incremental",
@@ -66,27 +54,15 @@
               "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
               "contentVersion": "1.0.0.0",
               "parameters": {
-                "resourceName": {
+                "siteName": {
                   "type": "string"
                 }
               },
               "resources": [
                 {
-                  "type": "Microsoft.Web/sites",
-                  "apiVersion": "2021-02-01",
-                  "name": "[parameters('resourceName')]",
-                  "location": "[resourceGroup().location]",
-                  "properties": {
-                    "httpsOnly": true
-                  }
-                },
-                {
                   "type": "Microsoft.Web/sites/config",
-                  "apiVersion": "2021-02-01",
-                  "name": "[concat(parameters('resourceName'), '/web')]",
-                  "dependsOn": [
-                    "[resourceId('Microsoft.Web/sites', parameters('resourceName'))]"
-                  ],
+                  "apiVersion": "2022-03-01",
+                  "name": "[concat(parameters('siteName'), '/web')]",
                   "properties": {
                     "ftpsState": "Disabled"
                   }
@@ -94,7 +70,7 @@
               ]
             },
             "parameters": {
-              "resourceName": {
+              "siteName": {
                 "value": "[field('name')]"
               }
             }
