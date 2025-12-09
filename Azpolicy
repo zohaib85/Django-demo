@@ -1,19 +1,15 @@
 {
   "properties": {
-    "displayName": "Logic App Standard: Disable FTP/FTPS",
+    "displayName": "Logic App Standard: Enforce FTPS Disabled",
     "policyType": "Custom",
     "mode": "Indexed",
-    "description": "DeployIfNotExists policy to disable FTP/FTPS for Standard Logic Apps.",
+    "description": "Ensures that Logic App Standard disables FTP/FTPS by configuring siteConfig.ftpsState to Disabled",
     "metadata": {
       "category": "Integration"
     },
     "parameters": {
       "effect": {
         "type": "String",
-        "metadata": {
-          "displayName": "Effect",
-          "description": "Policy effect"
-        },
         "allowedValues": [
           "DeployIfNotExists",
           "Disabled"
@@ -30,10 +26,10 @@
           },
           {
             "field": "kind",
-            "contains": "workflowapp"
+            "contains": "workflowapp"   // Identifies Logic App Standard
           },
           {
-            "field": "Microsoft.Web/sites/ftpsState",
+            "field": "Microsoft.Web/sites/config/ftpsState",
             "notEquals": "Disabled"
           }
         ]
@@ -42,36 +38,25 @@
         "effect": "[parameters('effect')]",
         "details": {
           "type": "Microsoft.Web/sites/config",
-          "name": "[concat(field('name'), '/web')]",
-          "deploymentScope": "resourceGroup",
-          "existenceCondition": {
-            "field": "Microsoft.Web/sites/ftpsState",
-            "equals": "Disabled"
-          },
+          "roleDefinitionIds": [
+            "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"  // Contributor
+          ],
           "deployment": {
-            "mode": "incremental",
-            "template": {
-              "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-              "contentVersion": "1.0.0.0",
-              "parameters": {
-                "siteName": {
-                  "type": "string"
-                }
-              },
-              "resources": [
-                {
-                  "type": "Microsoft.Web/sites/config",
-                  "apiVersion": "2022-03-01",
-                  "name": "[concat(parameters('siteName'), '/web')]",
-                  "properties": {
-                    "ftpsState": "Disabled"
+            "properties": {
+              "mode": "incremental",
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "resources": [
+                  {
+                    "type": "Microsoft.Web/sites/config",
+                    "apiVersion": "2022-03-01",
+                    "name": "[concat(field('name'), '/web')]",
+                    "properties": {
+                      "ftpsState": "Disabled"
+                    }
                   }
-                }
-              ]
-            },
-            "parameters": {
-              "siteName": {
-                "value": "[field('name')]"
+                ]
               }
             }
           }
