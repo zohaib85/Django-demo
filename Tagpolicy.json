@@ -1,0 +1,46 @@
+{
+  "properties": {
+    "displayName": "Tag VMs with Image Source (Internal vs Vendor)",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "Automatically tags VMs with local:imagesource based on image origin.",
+    "metadata": {
+      "category": "Tags"
+    },
+    "parameters": {
+      "tagName": {
+        "type": "String",
+        "defaultValue": "local:imagesource"
+      },
+      "internalValue": {
+        "type": "String",
+        "defaultValue": "Internal"
+      },
+      "vendorValue": {
+        "type": "String",
+        "defaultValue": "Vendor"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "field": "type",
+        "equals": "Microsoft.Compute/virtualMachines"
+      },
+      "then": {
+        "effect": "modify",
+        "details": {
+          "roleDefinitionIds": [
+            "/providers/microsoft.authorization/roleDefinitions/fd9d7e4f-8b1f-4f2f-9a3f-1d4e6f9f9b2d"
+          ],
+          "operations": [
+            {
+              "operation": "addOrReplace",
+              "field": "[concat('tags[', parameters('tagName'), ']')]",
+              "value": "[if(not(empty(field('Microsoft.Compute/virtualMachines/storageProfile.imageReference.id'))), parameters('internalValue'), parameters('vendorValue'))]"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
